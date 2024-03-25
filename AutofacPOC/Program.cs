@@ -2,6 +2,8 @@
 using Autofac.Extensions.DependencyInjection;
 using Autofac;
 using AutofacPOC.Services;
+using Microsoft.AspNetCore.Hosting;
+using Autofac.Multitenant;
 
 namespace AutofacPOC
 {
@@ -10,13 +12,14 @@ namespace AutofacPOC
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
             builder.Host
-                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(Program.ConfigureMultitenantContainer))
                 .ConfigureContainer<ContainerBuilder>((container) =>
                 {
-                    container.RegisterType<ClientAService>().As<IClientService>();
+                    container.RegisterType<DefaultService>().As<ITenantService>();
                 });
+
+            builder.Services.AddAutofacMultitenantRequestServices();
 
             // Add services to the container.
 
@@ -38,10 +41,19 @@ namespace AutofacPOC
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();
+        }
+
+        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
+        {
+            // This is the MULTITENANT PART. Set up your tenant-specific stuff here.
+            var strategy = new MyTenantIdentificationStrategy(container.Resolve<IHttpContextAccessor>());
+            var mtc = new MultitenantContainer(strategy, container);
+            mtc.ConfigureTenant("A", cb => cb.RegisterType<TenantAService>().As<ITenantService>());
+            mtc.ConfigureTenant("B", cb => cb.RegisterType<TenantBService>().As<ITenantService>());
+            return mtc;
         }
     }
 }

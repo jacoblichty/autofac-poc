@@ -1,6 +1,6 @@
 ﻿namespace AutofacPOC.Services
 {
-    public interface IClientService
+    public interface ITenantService
     {
         string invoke();
     }

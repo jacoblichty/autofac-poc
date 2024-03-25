@@ -9,9 +9,9 @@ namespace AutofacPOC.Controllers
     public class SampleController : ControllerBase
     {
 
-        private IClientService __clientService; 
+        private ITenantService __clientService; 
 
-        public SampleController(IClientService clientService) {
+        public SampleController(ITenantService clientService) {
             __clientService = clientService;
         }
 
