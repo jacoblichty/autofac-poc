@@ -9,15 +9,16 @@ namespace AutofacPOC.Controllers
     public class SampleController : ControllerBase
     {
 
-        private ITenantService __clientService; 
+        private IProxy __proxy; 
 
-        public SampleController(ITenantService clientService) {
-            __clientService = clientService;
+        public SampleController(IProxy proxy) {
+            __proxy = proxy;
         }
 
         public string Get()
         {
-            return __clientService.invoke();
+            var temp = HttpContext.User;
+            return __proxy.invoke();
         }
     }
 }

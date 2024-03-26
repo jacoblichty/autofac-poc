@@ -1,9 +1,6 @@
 
-using Autofac.Extensions.DependencyInjection;
 using Autofac;
 using AutofacPOC.Services;
-using Microsoft.AspNetCore.Hosting;
-using Autofac.Multitenant;
 
 namespace AutofacPOC
 {
@@ -12,48 +9,23 @@ namespace AutofacPOC
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            var startup = new Startup(builder.Configuration);
+            startup.ConfigureServices(builder.Services);
+
             builder.Host
-                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(Program.ConfigureMultitenantContainer))
+                .UseServiceProviderFactory(new AutofacMultitenantServiceProviderFactory(startup.ConfigureMultitenantContainer))
                 .ConfigureContainer<ContainerBuilder>((container) =>
                 {
+                    container.RegisterType<ProxyService>().As<IProxy>();
                     container.RegisterType<DefaultService>().As<ITenantService>();
                 });
 
-            builder.Services.AddAutofacMultitenantRequestServices();
-
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-
-            app.MapControllers();
+            startup.Configure(app);
 
             app.Run();
-        }
-
-        public static MultitenantContainer ConfigureMultitenantContainer(IContainer container)
-        {
-            // This is the MULTITENANT PART. Set up your tenant-specific stuff here.
-            var strategy = new MyTenantIdentificationStrategy(container.Resolve<IHttpContextAccessor>());
-            var mtc = new MultitenantContainer(strategy, container);
-            mtc.ConfigureTenant("A", cb => cb.RegisterType<TenantAService>().As<ITenantService>());
-            mtc.ConfigureTenant("B", cb => cb.RegisterType<TenantBService>().As<ITenantService>());
-            return mtc;
         }
     }
 }

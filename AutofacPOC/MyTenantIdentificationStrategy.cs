@@ -1,4 +1,5 @@
 ﻿using Autofac.Multitenant;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AutofacPOC
 {
@@ -17,6 +18,7 @@ namespace AutofacPOC
             try
             {
                 var context = __httpContextAccessor.HttpContext;
+                DecodeBearerToken(context);
                 if (context != null && context.Request != null)
                 {
                     // casting to string is necessary for some reason... otherwise the value doesn't stick
@@ -29,6 +31,18 @@ namespace AutofacPOC
             }
             
             return tenantId != null;
+        }
+
+        public void DecodeBearerToken(HttpContext context)
+        {
+            if (context == null)
+            {
+                return;
+            }
+            var token = context.Request.Headers.Authorization.First().Split("Bearer ")[1];
+            var handler = new JwtSecurityTokenHandler();
+            var json = (JwtSecurityToken)handler.ReadToken(token);
+            var email = json.Claims.Where(c => c.Type == "emails");
         }
     }
 }
